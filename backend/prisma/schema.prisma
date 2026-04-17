@@ -1,5 +1,7 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// ============================================================
+// 智能农业灌溉系统 - Prisma Schema
+// Multi-tenant IoT Backend with API Key auth + MQTT control
+// ============================================================
 
 generator client {
   provider = "prisma-client-js"
@@ -7,6 +9,84 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// TODO: add your models here
+// ------------------------------------------------------------
+// 用户表：每个用户有独立的 API_KEY，支持多租户管理
+// ------------------------------------------------------------
+model User {
+  id          String   @id @default(uuid())
+  username    String   @unique              // 登录用户名
+  password    String                        // Bcrypt 哈希后的密码（预留，非 API Key 场景）
+  apiKey      String   @unique              // 用户的唯一 API_KEY（Bearer Token）
+  apiKeyAlias String?  @default("")        // Key 的别名/备注，方便管理
+  isActive    Boolean  @default(true)       // 禁用后该 Key 立即失效
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastUsedAt  DateTime?                     // 最后一次调用 API 的时间
+
+  // 关联：一个用户可以绑定多台设备
+  devices Device[]
+
+  @@map("users")
+}
+
+// ------------------------------------------------------------
+// 设备表：记录 ESP32 硬件设备的状态与归属
+// ------------------------------------------------------------
+model Device {
+  id           String   @id @default(uuid())
+  deviceId     String   @unique              // 物理设备编号，如 "ESP32_001"
+  deviceName   String   @default("")          // 设备别名，如 "1号大棚灌溉阀"
+  deviceType   String   @default("ESP32")    // 设备类型：ESP32 / STM32 / etc.
+  deviceSecret String?                        // 设备端认证密钥（可选，用于设备固件 OTA）
+
+  // 在线状态
+  isOnline     Boolean  @default(false)       // 设备是否在线
+  lastOnlineAt DateTime?
+
+  // 归属用户（多租户隔离）
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 关系：一个设备可产生多条日志
+  irrigationLogs IrrigationLog[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("devices")
+}
+
+// ------------------------------------------------------------
+// 灌溉日志表：记录每次灌溉操作的完整轨迹
+// ------------------------------------------------------------
+model IrrigationLog {
+  id         String   @id @default(uuid())
+  deviceId   String
+  device     Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  // 操作来源
+  trigger    String   @default("API")         // API | SCHEDULE | SENSOR | MANUAL
+  triggerBy  String?                        // 触发者：User.username / "AI_Agent" / "Sensor"
+
+  // 指令内容
+  command    String                        // ON / OFF
+  topic      String                        // 发布到的 MQTT 主题
+
+  // 传感器数据（触发时或当前状态）
+  soilMoisture  Float?                     // 土壤湿度 0~100%
+  temperature   Float?                     // 温度 摄氏度
+  humidity      Float?                     // 空气湿度 0~100%
+
+  // 状态（用于追诉）
+  status     String   @default("PENDING")   // PENDING | SUCCESS | FAILED | TIMEOUT
+
+  // 时间戳
+  issuedAt   DateTime @default(now())      // 指令下发时间
+  completedAt DateTime?                    // 指令完成时间（设备响应）
+
+  @@index([deviceId, issuedAt])
+  @@map("irrigation_logs")
+}
