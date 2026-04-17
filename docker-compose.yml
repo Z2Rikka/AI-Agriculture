@@ -18,6 +18,41 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - eps32_net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eps32_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://eps32:eps32pass@postgres:5432/eps32db?schema=public
+      NODE_ENV: production
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - eps32_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: eps32_frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - eps32_net
+
+networks:
+  eps32_net:
+    driver: bridge
 
 volumes:
   postgres_data:
