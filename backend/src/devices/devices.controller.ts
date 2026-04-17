@@ -16,7 +16,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { IRequestUser } from '../common/interfaces/request-user.interface';
 
 @ApiTags('Devices')
-@Controller('api/v1/devices')
+@Controller('devices')
 @UseGuards(ApiKeyGuard)
 @ApiBearerAuth('API_KEY')
 export class DevicesController {

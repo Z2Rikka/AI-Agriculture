@@ -22,7 +22,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { IRequestUser } from '../common/interfaces/request-user.interface';
 
 @ApiTags('Irrigation')
-@Controller('api/v1/irrigation')
+@Controller('irrigation')
 @UseGuards(ApiKeyGuard)
 @ApiBearerAuth('API_KEY')
 export class IrrigationController {
