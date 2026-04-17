@@ -1,10 +1,13 @@
 {
   "name": "backend",
   "version": "0.0.1",
-  "description": "",
+  "description": "IoT Smart Irrigation System — NestJS + Prisma + MQTT",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
