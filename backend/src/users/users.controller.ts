@@ -1,6 +1,6 @@
 // users/users.controller.ts
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, UseGuards, Headers, UnauthorizedException } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ApiKeyGuard } from '../auth/guards/api-key.guard';
@@ -14,7 +14,15 @@ export class UsersController {
 
   /** 注册新用户（生成 API_KEY，调试/管理接口，生产环境应加管理员鉴权） */
   @Post()
-  create(@Body() dto: CreateUserDto) {
+  @ApiHeader({ name: 'x-admin-secret', description: 'Admin Registration Secret', required: true })
+  create(
+    @Body() dto: CreateUserDto,
+    @Headers('x-admin-secret') adminSecret: string,
+  ) {
+    const expectedSecret = process.env.ADMIN_REGISTRATION_SECRET;
+    if (!expectedSecret || adminSecret !== expectedSecret) {
+      throw new UnauthorizedException('Invalid or missing admin secret');
+    }
     return this.usersService.create(dto.username);
   }
 
