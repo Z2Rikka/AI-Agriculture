@@ -23,13 +23,19 @@ export class SensorsService {
     }
 
     const result: DeviceSensorDataDto[] = [];
+    const deviceIds = devices.map((d) => d.id);
 
-    // 2. 为每个设备查询最新的一条 SensorData
+    // 2. 一次性查询所有设备最近的一条数据 (利用 distinct)
+    const latestDataList = await this.prisma.sensorData.findMany({
+      where: { deviceId: { in: deviceIds } },
+      orderBy: { timestamp: 'desc' },
+      distinct: ['deviceId'],
+    });
+
+    const dataMap = new Map(latestDataList.map((data) => [data.deviceId, data]));
+
     for (const device of devices) {
-      const latestData = await this.prisma.sensorData.findFirst({
-        where: { deviceId: device.id },
-        orderBy: { timestamp: 'desc' },
-      });
+      const latestData = dataMap.get(device.id);
 
       result.push({
         deviceId: device.deviceId,

@@ -2,6 +2,7 @@
 // 阀门控制请求的 DTO（OpenClaw HTTP POST /api/v1/irrigation/control）
 
 import { IsString, IsIn, IsOptional, IsNumber } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class ValveControlDto {
   /** 目标设备编号（不传则使用用户绑定的第一台设备） */
@@ -31,10 +32,21 @@ export class ValveControlDto {
 }
 
 export class ValveControlResponseDto {
+  @ApiProperty()
   success: boolean;
+
+  @ApiProperty()
   deviceId: string;
+
+  @ApiProperty()
   command: string;
+
+  @ApiProperty()
   topic: string;
+
+  @ApiProperty()
   logId: string;
+
+  @ApiProperty()
   message: string;
 }

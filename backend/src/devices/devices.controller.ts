@@ -3,6 +3,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -11,6 +13,7 @@ import {
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { DevicesService } from './devices.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
+import { UpdateDeviceDto } from './dto/update-device.dto';
 import { ApiKeyGuard } from '../auth/guards/api-key.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { IRequestUser } from '../common/interfaces/request-user.interface';
@@ -44,5 +47,24 @@ export class DevicesController {
     @Param('deviceId') deviceId: string,
   ) {
     return this.devicesService.findOne(user.userId, deviceId);
+  }
+
+  /** 更新指定设备详情 */
+  @Patch(':deviceId')
+  update(
+    @CurrentUser() user: IRequestUser,
+    @Param('deviceId') deviceId: string,
+    @Body() dto: UpdateDeviceDto,
+  ) {
+    return this.devicesService.update(user.userId, deviceId, dto);
+  }
+
+  /** 删除指定设备 */
+  @Delete(':deviceId')
+  remove(
+    @CurrentUser() user: IRequestUser,
+    @Param('deviceId') deviceId: string,
+  ) {
+    return this.devicesService.remove(user.userId, deviceId);
   }
 }

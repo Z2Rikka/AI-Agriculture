@@ -60,11 +60,7 @@ export class IrrigationService {
       extendedPayload.durationSec = durationSec;
     }
 
-    this.mqtt.publishCommand(
-      targetDevice.deviceId,
-      command,
-      triggerBy ?? userId,
-    );
+    this.mqtt.publish(topic, extendedPayload);
 
     // ----------------------------------------------------------
     // Step 3: 写入审计日志（异步，不阻塞响应）

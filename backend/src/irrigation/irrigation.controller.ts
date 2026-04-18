@@ -13,6 +13,7 @@ import {
   HttpStatus,
   BadRequestException,
   ValidationPipe,
+  ParseArrayPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { IrrigationService } from './irrigation.service';
@@ -53,12 +54,8 @@ export class IrrigationController {
   @ApiResponse({ status: 404, description: '设备未找到' })
   async controlValve(
     @CurrentUser() user: IRequestUser,
-    @Body(new ValidationPipe({ transform: true, whitelist: true })) dto: ValveControlDto,
+    @Body() dto: ValveControlDto,
   ): Promise<ValveControlResponseDto> {
-    if (!dto.command) {
-      throw new BadRequestException('command is required (ON or OFF)');
-    }
-
     return this.irrigationService.controlValve(user.userId, dto);
   }
 
@@ -71,7 +68,7 @@ export class IrrigationController {
   @ApiOperation({ summary: '批量控制灌溉阀门' })
   async batchControl(
     @CurrentUser() user: IRequestUser,
-    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    @Body(new ParseArrayPipe({ items: ValveControlDto }))
     dtos: ValveControlDto[],
   ): Promise<ValveControlResponseDto[]> {
     const results = await Promise.all(

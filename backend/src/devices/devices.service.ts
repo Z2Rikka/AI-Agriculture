@@ -5,6 +5,7 @@ import { Injectable, OnModuleInit, Logger, ForbiddenException } from '@nestjs/co
 import { PrismaService } from '../prisma/prisma.service';
 import { MqttClientService } from '../mqtt/mqtt-client.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
+import { UpdateDeviceDto } from './dto/update-device.dto';
 
 @Injectable()
 export class DevicesService implements OnModuleInit {
@@ -53,7 +54,7 @@ export class DevicesService implements OnModuleInit {
 
   /**
    * 更新设备在线状态和传感器数据
-   * 如果设备不在数据库中（N+1 防护），自动忽略（不上报日志）
+   * 如果设备不在数据库中（防止未注册的陌生设备产生脏数据），会被自动丢弃并忽略
    */
   private async updateDeviceStatus(
     deviceId: string,
@@ -137,5 +138,26 @@ export class DevicesService implements OnModuleInit {
     }
 
     return device;
+  }
+
+  /**
+   * 更新设备信息
+   */
+  async update(userId: string, deviceId: string, dto: UpdateDeviceDto) {
+    const device = await this.findOne(userId, deviceId);
+    return this.prisma.device.update({
+      where: { id: device.id },
+      data: dto,
+    });
+  }
+
+  /**
+   * 删除设备
+   */
+  async remove(userId: string, deviceId: string) {
+    const device = await this.findOne(userId, deviceId);
+    return this.prisma.device.delete({
+      where: { id: device.id },
+    });
   }
 }

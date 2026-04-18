@@ -27,8 +27,8 @@ RUN npm ci --omit=dev
 
 # Copy built artifacts from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY prisma ./prisma
+RUN npx prisma generate
 
 # Environment variables (override at runtime)
 ENV NODE_ENV=production

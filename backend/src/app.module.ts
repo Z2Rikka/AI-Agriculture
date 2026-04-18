@@ -1,5 +1,7 @@
 // app.module.ts
 import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { MqttModule } from './mqtt/mqtt.module';
@@ -17,5 +19,7 @@ import { SensorsModule } from './sensors/sensors.module';
     DevicesModule,  // 设备管理
     IrrigationModule, SensorsModule, // 灌溉控制
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

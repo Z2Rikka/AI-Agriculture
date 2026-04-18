@@ -44,22 +44,32 @@ export class RenkeCloudService implements OnModuleInit, OnModuleDestroy {
     }
 
     this.logger.log('Fetching new token from Renke Cloud...');
-    try {
-      const url = `http://www.0531yun.com/api/getToken?loginName=${encodeURIComponent(this.loginName)}&password=${encodeURIComponent(this.password)}`;
-      const response = await fetch(url);
-      const json = await response.json();
+    let attempts = 0;
+    while (attempts < 3) {
+      attempts++;
+      try {
+        const url = `http://www.0531yun.com/api/getToken?loginName=${encodeURIComponent(this.loginName)}&password=${encodeURIComponent(this.password)}`;
+        const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        const json = await response.json();
 
-      if (json.code === 1000 && json.data?.token) {
-        this.token = json.data.token;
-        this.tokenExp = json.data.expiration;
-        this.logger.log('Successfully obtained token.');
-        return this.token;
-      } else {
-        this.logger.error(`Failed to get token: ${json.message}`);
+        if (json.code === 1000 && json.data?.token) {
+          this.token = json.data.token;
+          this.tokenExp = json.data.expiration;
+          this.logger.log('Successfully obtained token.');
+          return this.token;
+        } else {
+          this.logger.error(`Failed to get token: ${json.message}`);
+        }
+      } catch (error: any) {
+        this.logger.error(`Error fetching token (attempt ${attempts}): ${error.message}`);
       }
-    } catch (error: any) {
-      this.logger.error(`Error fetching token: ${error.message}`);
+      
+      if (attempts < 3) {
+        await new Promise(res => setTimeout(res, 2000));
+      }
     }
+    
+    this.logger.error('Failed to obtain Renke Cloud token after 3 attempts.');
     return null;
   }
 
@@ -83,25 +93,41 @@ export class RenkeCloudService implements OnModuleInit, OnModuleDestroy {
       // 平台 API 支持多个设备一起查，用逗号分隔
       const deviceAddrs = renkeDevices.map(d => d.deviceId).join(',');
 
-      const url = `http://www.0531yun.com/api/data/getRealTimeDataByDeviceAddr?deviceAddrs=${deviceAddrs}`;
-      const response = await fetch(url, {
-        headers: {
-          'authorization': token,
-        }
-      });
-      const json = await response.json();
+      let attempts = 0;
+      while (attempts < 3) {
+        attempts++;
+        try {
+          const url = `http://www.0531yun.com/api/data/getRealTimeDataByDeviceAddr?deviceAddrs=${deviceAddrs}`;
+          const response = await fetch(url, {
+            headers: {
+              'authorization': token,
+            },
+            signal: AbortSignal.timeout(10000)
+          });
+          const json = await response.json();
 
-      if (json.code === 1000 && json.data && Array.isArray(json.data)) {
-        // 返回了多个设备的数据
-        for (const deviceData of json.data) {
-          await this.processDeviceData(deviceData, renkeDevices);
+          if (json.code === 1000 && json.data && Array.isArray(json.data)) {
+            // 返回了多个设备的数据
+            for (const deviceData of json.data) {
+              await this.processDeviceData(deviceData, renkeDevices);
+            }
+            return; // Success, exit loop
+          } else {
+            this.logger.warn(`No data or error from Renke Cloud: ${json.message}`);
+          }
+        } catch (error: any) {
+          this.logger.error(`Error fetching real-time data (attempt ${attempts}): ${error.message}`);
         }
-      } else {
-        this.logger.warn(`No data or error from Renke Cloud: ${json.message}`);
+        
+        if (attempts < 3) {
+          await new Promise(res => setTimeout(res, 2000));
+        }
       }
+      this.logger.error('Failed to fetch real-time data after 3 attempts. Skipping this cycle.');
 
     } catch (error: any) {
-      this.logger.error(`Error fetching real-time data: ${error.message}`);
+      // outer catch remains just in case
+      this.logger.error(`Unhandled error during fetch cycle: ${error.message}`);
     }
   }
 
