@@ -91,9 +91,7 @@ export class DevicesService implements OnModuleInit {
           soilMoisture: payload.soilMoisture as number | undefined,
           temperature: payload.temperature as number | undefined,
           humidity: payload.humidity as number | undefined,
-          status: payload.valveState === 'ON' || payload.valveState === 'OFF'
-            ? 'SUCCESS'
-            : latestLog.status,
+          status: 'SUCCESS',
           completedAt: new Date(),
         },
       });

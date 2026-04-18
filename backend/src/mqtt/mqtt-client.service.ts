@@ -107,6 +107,20 @@ export class MqttClientService implements OnModuleInit, OnModuleDestroy {
   // ============================================================
 
   /**
+   * 发布任意数据到指定主题
+   */
+  publish(topic: string, payloadObj: Record<string, unknown>): void {
+    const payload = JSON.stringify(payloadObj);
+    this.client?.publish(topic, payload, { qos: 1 }, (err) => {
+      if (err) {
+        this.logger.error(`[MQTT] Publish failed to ${topic}`, err?.message);
+      } else {
+        this.logger.debug(`[MQTT OUT] topic=${topic} payload=${payload}`);
+      }
+    });
+  }
+
+  /**
    * 向指定设备下发 ON / OFF 指令
    * 主题格式: irrigation/{deviceId}/command
    */

@@ -27,6 +27,8 @@ services:
       dockerfile: Dockerfile
     container_name: eps32_backend
     restart: unless-stopped
+    env_file:
+      - ./backend/.env
     environment:
       DATABASE_URL: postgresql://eps32:eps32pass@postgres:5432/eps32db?schema=public
       NODE_ENV: production

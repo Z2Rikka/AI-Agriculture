@@ -52,11 +52,37 @@ model Device {
 
   // 关系：一个设备可产生多条日志
   irrigationLogs IrrigationLog[]
+  // 关系：传感器数据历史
+  sensorData     SensorData[]
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   @@map("devices")
+}
+
+// ------------------------------------------------------------
+// 传感器数据表：记录设备上传的环境参数历史
+// ------------------------------------------------------------
+model SensorData {
+  id              String   @id @default(uuid())
+  deviceId        String
+  device          Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  airTemperature  Float?   // 空气温度 ℃
+  airHumidity     Float?   // 空气湿度 %
+  soilTemperature Float?   // 土壤温度 ℃
+  soilHumidity    Float?   // 土壤湿度 %
+  illuminance     Float?   // 光照度 Lux
+  batteryLevel    Float?   // 电池电量 %
+  
+  // JSON 扩展字段保存其他未知传感器数据
+  extraData       Json?
+
+  timestamp       DateTime @default(now()) // 数据采集时间
+
+  @@index([deviceId, timestamp])
+  @@map("sensor_data")
 }
 
 // ------------------------------------------------------------
